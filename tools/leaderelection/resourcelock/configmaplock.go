@@ -43,11 +43,11 @@ type ConfigMapLock struct {
 // Get returns the election record from a ConfigMap Annotation
 func (cml *ConfigMapLock) Get() (*LeaderElectionRecord, error) {
 	var record LeaderElectionRecord
-	var err error
-	cml.cm, err = cml.Client.ConfigMaps(cml.ConfigMapMeta.Namespace).Get(cml.ConfigMapMeta.Name, metav1.GetOptions{})
+	cm, err := cml.Client.ConfigMaps(cml.ConfigMapMeta.Namespace).Get(cml.ConfigMapMeta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
+	cml.cm = cm
 	if cml.cm.Annotations == nil {
 		cml.cm.Annotations = make(map[string]string)
 	}
@@ -87,7 +87,10 @@ func (cml *ConfigMapLock) Update(ler LeaderElectionRecord) error {
 		return err
 	}
 	cml.cm.Annotations[LeaderElectionRecordAnnotationKey] = string(recordBytes)
-	cml.cm, err = cml.Client.ConfigMaps(cml.ConfigMapMeta.Namespace).Update(cml.cm)
+	cm, err := cml.Client.ConfigMaps(cml.ConfigMapMeta.Namespace).Update(cml.cm)
+	if err == nil {
+		cml.cm = cm
+	}
 	return err
 }
 
